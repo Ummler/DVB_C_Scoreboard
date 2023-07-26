@@ -1,8 +1,15 @@
 #include <gtk/gtk.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include <wchar.h>
 #include "letters.h"
 #include "query.h"
+#include <locale.h>
+
+// Set locale at the beginning of your program
+
+
+
 
 #define CELL_SIZE 3  
 #define GRID_ROWS 200
@@ -31,9 +38,30 @@ gboolean on_draw_event(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
     }
     return FALSE;
 }
-void DrawLetter(int x, int y, char character) {
-    character = toupper(character);
-    
+
+int getLength(const wchar_t* string) {
+    int totalWidth = 0;
+    int len = wcslen(string);
+
+    for(int i = 0; i < len; i++) {
+        wchar_t character = string[i];
+
+        // Find the width of the character from the mapping
+        for(int j = 0; j < NUM_LETTERS; j++) {
+            if(letters[j].c == character) {
+                totalWidth += letters[j].width;
+                break;
+            }
+        }
+        totalWidth += len-1; //Für den Platz zwischen den Buchstaben        
+    }
+
+    return totalWidth;
+}
+
+
+
+void DrawLetter(int x, int y, wchar_t character) {
     for (int i = 0; i < NUM_LETTERS; i++) {
         if (letters[i].c == character) {
             for (int j = 0; j < letters[i].height; j++) {
@@ -48,22 +76,24 @@ void DrawLetter(int x, int y, char character) {
     }
 }
 
-void DrawString(int x, int y, const char* string) {
-    int len = strlen(string);
+
+
+void DrawString(int x, int y, const wchar_t* string) {
+    int len = wcslen(string);
 
     // Create a new string that includes original characters and spaces
-    char* spaced_string = malloc(2 * len + 1);  // Allocate memory for new string
+    wchar_t* spaced_string = malloc((2 * len + 1) * sizeof(wchar_t));  // Allocate memory for new string
     for(int i = 0; i < len; i++) {
         spaced_string[2*i] = string[i];   // Copy original character
-        spaced_string[2*i + 1] = ' ';     // Insert space
+        spaced_string[2*i + 1] = L' ';     // Insert space
     }
-    spaced_string[2 * len] = '\0';  // Null-terminate the new string
+    spaced_string[2 * len] = L'\0';  // Null-terminate the new string
     
-    len = strlen(spaced_string);  // Update length for the new string
+    len = wcslen(spaced_string);  // Update length for the new string
 
     for (int i = 0; i < len; i++) {
         // Check if the current character is a space
-        if(spaced_string[i] == ' '){
+        if(spaced_string[i] == L' '){
             x += 1;  // Update x to the next position; add space width
             continue;
         }
@@ -89,54 +119,64 @@ void DrawString(int x, int y, const char* string) {
 
 
 
-void DrawHeader(int row, const char* string) {
+
+void DrawHeader(int row, const wchar_t* string) {
     DrawString(0, row * ROW_HEIGHT, string);
-    DrawString(0, (row +1) * ROW_HEIGHT + 1, "Linie");
-    DrawString(GRID_COLS - 40, (row+1) * ROW_HEIGHT, "in Min");
+    DrawString(0, (row +1) * ROW_HEIGHT + 1, L"Linie");
+    DrawString(GRID_COLS - 32, (row+1) * ROW_HEIGHT, L"in Min");
 }
 
 void DrawLine(int row, DepartureInfo* departures) {
     DrawString(0, (row) * ROW_HEIGHT, departures->lineName);
     DrawString(40, (row) * ROW_HEIGHT, departures->direction);
+    DrawString(GRID_COLS - getLength(departures->realTime)-1, (row) * ROW_HEIGHT, departures->realTime);
 }
 
 
-int main(int argc, char *argv[]) {
-    gtk_init(&argc, &argv);
 
+int main(int argc, char *argv[]) {
+    printf("1Hello, World!\n");
+    setlocale(LC_ALL, "");
+    gtk_init(&argc, &argv);
+printf("2Hello, World!\n");
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "My Project");
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
-
+printf("3Hello, World!\n");
     GtkWidget *drawing_area = gtk_drawing_area_new();
     gtk_container_add(GTK_CONTAINER(window), drawing_area);
     g_signal_connect(G_OBJECT(drawing_area), "draw", G_CALLBACK(on_draw_event), NULL);
-
+printf("4Hello, World!\n");
     // Fetch data and print JSON to console
 
-    const int limit = 5;
+    const int limit = 8;
     DepartureInfo departures[limit];
     struct json_object* json_data = fetchData("33000016", limit);
     parse_and_store_data(json_data, departures, limit);
     //printf("%s\n", json_object_to_json_string_ext(json_data, JSON_C_TO_STRING_PRETTY));
-
-    for (int i = 0; i < limit; i++)
-    //calculate_time_offset(departures[i].realTime);
-    
-    DrawHeader(0, "Bahnhof Neustadt");
-
+printf("5Hello, World!\n");
     for (int i = 0; i < limit; i++) {
-        printf("%s %s %s\n", departures[i].lineName, departures[i].direction, departures[i].realTime);
+    long long offset = calculate_time_offset(departures[i].realTime);
+    swprintf(departures[i].realTime, sizeof(departures[i].realTime)/sizeof(wchar_t), L"%lld", offset);
+}
+
+printf("6Hello, World!\n");
+
+
+    
+    DrawHeader(0, L"Bahnhof Neustadt");
+    for (int i = 0; i < limit; i++) {
+        printf("%ls %ls %ls\n", departures[i].lineName, departures[i].direction, departures[i].realTime);
         DrawLine(2+i, &departures[i]);
     }
-
+    
     // Draw A at grid position (10, 10)
     //DrawLetter(10, 10, 'A');
-    
+    printf("7Hello, World!\n");
     
 
     gtk_widget_show_all(window);
     gtk_main();
-
+printf("8Hello, World!\n");
     return 0;
 }
