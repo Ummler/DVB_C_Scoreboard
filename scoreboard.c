@@ -25,6 +25,9 @@ bool grid[GRID_ROWS][GRID_COLS] = {false};
 gboolean on_draw_event(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
     gtk_widget_set_size_request(widget, WIDTH, HEIGHT);
 
+    cairo_set_source_rgb(cr, 0, 0, 0);
+    cairo_paint(cr);  // Setze den Hintergrund auf schwarz
+
     for (int i = 0; i < GRID_ROWS; i++) {
         for (int j = 0; j < GRID_COLS; j++) {
             if (grid[i][j]) {
@@ -38,6 +41,7 @@ gboolean on_draw_event(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
     }
     return FALSE;
 }
+
 
 int getLength(const wchar_t* string) {
     int totalWidth = 0;
@@ -135,18 +139,18 @@ void DrawLine(int row, DepartureInfo* departures) {
 
 
 int main(int argc, char *argv[]) {
-    printf("1Hello, World!\n");
+ 
     setlocale(LC_ALL, "");
     gtk_init(&argc, &argv);
-printf("2Hello, World!\n");
+
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(window), "My Project");
+    gtk_window_set_title(GTK_WINDOW(window), "Anzeigetafel");
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
-printf("3Hello, World!\n");
+
     GtkWidget *drawing_area = gtk_drawing_area_new();
     gtk_container_add(GTK_CONTAINER(window), drawing_area);
     g_signal_connect(G_OBJECT(drawing_area), "draw", G_CALLBACK(on_draw_event), NULL);
-printf("4Hello, World!\n");
+
     // Fetch data and print JSON to console
 
     const int limit = 8;
@@ -154,29 +158,44 @@ printf("4Hello, World!\n");
     struct json_object* json_data = fetchData("33000016", limit);
     parse_and_store_data(json_data, departures, limit);
     //printf("%s\n", json_object_to_json_string_ext(json_data, JSON_C_TO_STRING_PRETTY));
-printf("5Hello, World!\n");
+
     for (int i = 0; i < limit; i++) {
     long long offset = calculate_time_offset(departures[i].realTime);
     swprintf(departures[i].realTime, sizeof(departures[i].realTime)/sizeof(wchar_t), L"%lld", offset);
 }
 
-printf("6Hello, World!\n");
+
 
 
     
     DrawHeader(0, L"Bahnhof Neustadt");
     for (int i = 0; i < limit; i++) {
-        printf("%ls %ls %ls\n", departures[i].lineName, departures[i].direction, departures[i].realTime);
+        wprintf(L"%ls %ls %ls\n", departures[i].lineName, departures[i].direction, departures[i].realTime);
         DrawLine(2+i, &departures[i]);
     }
     
     // Draw A at grid position (10, 10)
     //DrawLetter(10, 10, 'A');
-    printf("7Hello, World!\n");
+
     
+    GtkCssProvider *provider = gtk_css_provider_new();
+    GdkDisplay *display = gdk_display_get_default();
+    GdkScreen *screen = gdk_display_get_default_screen(display);
+
+    gtk_style_context_add_provider_for_screen(screen,
+    GTK_STYLE_PROVIDER(provider),
+    GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+    // Ihr CSS, das den Hintergrund der Zeichenbereichs-Widgets auf Schwarz setzt
+    const gchar *myCss = "GtkDrawingArea { background-color: #000000; }";
+
+
+    gtk_css_provider_load_from_data(GTK_CSS_PROVIDER(provider), myCss, -1, NULL);
+
+
 
     gtk_widget_show_all(window);
     gtk_main();
-printf("8Hello, World!\n");
+
     return 0;
 }
