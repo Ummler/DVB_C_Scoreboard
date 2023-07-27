@@ -8,9 +8,6 @@
 
 // Set locale at the beginning of your program
 
-
-
-
 #define CELL_SIZE 3  
 #define GRID_ROWS 200
 #define GRID_COLS 300
@@ -19,8 +16,20 @@
 #define WIDTH (CELL_SIZE * GRID_COLS)
 #define HEIGHT (CELL_SIZE * GRID_ROWS)
 #define ROW_HEIGHT 13
+#define MAX_DIR_LENGTH (GRID_COLS - 75)
+#define MAX_LINE_LENGTH 30
+#define MAX_TIME_LENGTH 40
+
+
+// Fügen Sie diese Zeilen vor der main Funktion hinzu
+void DrawHeader(int row, const wchar_t* string);
+void DrawLine(int row, DepartureInfo* departures);
+gboolean on_draw_event(GtkWidget *widget, cairo_t *cr, gpointer user_data);
+
 
 bool grid[GRID_ROWS][GRID_COLS] = {false};
+GtkWidget *window;
+GtkWidget *drawing_area;
 
 gboolean on_draw_event(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
     gtk_widget_set_size_request(widget, WIDTH, HEIGHT);
@@ -132,52 +141,67 @@ void DrawHeader(int row, const wchar_t* string) {
 
 void DrawLine(int row, DepartureInfo* departures) {
     DrawString(0, (row) * ROW_HEIGHT, departures->lineName);
-    DrawString(40, (row) * ROW_HEIGHT, departures->direction);
+    DrawString(45, (row) * ROW_HEIGHT, departures->direction);
     DrawString(GRID_COLS - getLength(departures->realTime)-1, (row) * ROW_HEIGHT, departures->realTime);
 }
 
 
+void shortenAttributes(DepartureInfo* departures){
+    int len = getLength(departures->direction);
+    if(len > MAX_DIR_LENGTH){
+        wcsncpy(departures->direction, departures->direction, MAX_DIR_LENGTH);
+        departures->direction[MAX_DIR_LENGTH] = L'\0';  // Null-Terminate the new string
+    }
+    len = getLength(departures->lineName);
+    if (len > MAX_LINE_LENGTH){
+        wcsncpy(departures->lineName, departures->lineName, MAX_LINE_LENGTH);
+        departures->lineName[MAX_LINE_LENGTH] = L'\0';  // Null-Terminate the new string
+    }
+    len = getLength(departures->realTime);
+    if (len > MAX_TIME_LENGTH){
+        wcsncpy(departures->realTime, departures->realTime, MAX_TIME_LENGTH);
+        departures->realTime[MAX_TIME_LENGTH] = L'\0';  // Null-Terminate the new string
+    }
+}
 
-int main(int argc, char *argv[]) {
- 
-    setlocale(LC_ALL, "");
-    gtk_init(&argc, &argv);
 
-    GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(window), "Anzeigetafel");
-    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
-    GtkWidget *drawing_area = gtk_drawing_area_new();
-    gtk_container_add(GTK_CONTAINER(window), drawing_area);
-    g_signal_connect(G_OBJECT(drawing_area), "draw", G_CALLBACK(on_draw_event), NULL);
-
-    // Fetch data and print JSON to console
+gboolean repeat_function(gpointer user_data) {
+    // Hier setzen wir das gesamte Raster auf 'false'
+    memset(grid, false, sizeof grid);
 
     const int limit = 8;
     DepartureInfo departures[limit];
     struct json_object* json_data = fetchData("33000016", limit);
     parse_and_store_data(json_data, departures, limit);
-    //printf("%s\n", json_object_to_json_string_ext(json_data, JSON_C_TO_STRING_PRETTY));
 
     for (int i = 0; i < limit; i++) {
-    long long offset = calculate_time_offset(departures[i].realTime);
-    swprintf(departures[i].realTime, sizeof(departures[i].realTime)/sizeof(wchar_t), L"%lld", offset);
-}
+        long long offset = calculate_time_offset(departures[i].realTime);
+        swprintf(departures[i].realTime, sizeof(departures[i].realTime)/sizeof(wchar_t), L"%lld", offset);
+    }
 
-
-
-
-    
     DrawHeader(0, L"Bahnhof Neustadt");
     for (int i = 0; i < limit; i++) {
         wprintf(L"%ls %ls %ls\n", departures[i].lineName, departures[i].direction, departures[i].realTime);
         DrawLine(2+i, &departures[i]);
     }
-    
-    // Draw A at grid position (10, 10)
-    //DrawLetter(10, 10, 'A');
 
-    
+    gtk_widget_queue_draw(window);
+    return TRUE;  // return TRUE here to keep the timer running
+}
+
+int main(int argc, char *argv[]) {
+    setlocale(LC_ALL, "");
+    gtk_init(&argc, &argv);
+
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(window), "Anzeigetafel");
+    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+
+    drawing_area = gtk_drawing_area_new();
+    gtk_container_add(GTK_CONTAINER(window), drawing_area);
+    g_signal_connect(G_OBJECT(drawing_area), "draw", G_CALLBACK(on_draw_event), NULL);
+
     GtkCssProvider *provider = gtk_css_provider_new();
     GdkDisplay *display = gdk_display_get_default();
     GdkScreen *screen = gdk_display_get_default_screen(display);
@@ -186,16 +210,22 @@ int main(int argc, char *argv[]) {
     GTK_STYLE_PROVIDER(provider),
     GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-    // Ihr CSS, das den Hintergrund der Zeichenbereichs-Widgets auf Schwarz setzt
     const gchar *myCss = "GtkDrawingArea { background-color: #000000; }";
-
-
     gtk_css_provider_load_from_data(GTK_CSS_PROVIDER(provider), myCss, -1, NULL);
 
-
-
     gtk_widget_show_all(window);
+
+    repeat_function(NULL);
+
+
+    // Den Timer starten
+
+    g_timeout_add_seconds(60, repeat_function, NULL);
+
     gtk_main();
 
     return 0;
 }
+
+
+
