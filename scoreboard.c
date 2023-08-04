@@ -9,8 +9,8 @@
 // Set locale at the beginning of your program
 
 #define CELL_SIZE 4
-#define GRID_ROWS 400
-#define GRID_COLS 635
+#define GRID_ROWS 350
+#define GRID_COLS 500
 #define CIRCLE_RADIUS 1
 #define NUM_LETTERS (sizeof(letters)/sizeof(letters[0]))
 #define WIDTH (CELL_SIZE * GRID_COLS)
@@ -19,9 +19,7 @@
 #define MAX_DIR_LENGTH (GRID_COLS - 75)
 #define MAX_LINE_LENGTH 30
 #define MAX_TIME_LENGTH 40
-//37,4 auf 47,5
 
-a=zy/x
 
 
 // Fügen Sie diese Zeilen vor der main Funktion hinzu
@@ -201,8 +199,10 @@ int main(int argc, char *argv[]) {
 
 window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 gtk_window_set_title(GTK_WINDOW(window), "Anzeigetafel");
+gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
 
 gtk_widget_set_size_request (GTK_WIDGET(window), 1920, 1080);
+
 //gtk_window_fullscreen(GTK_WINDOW(window));  // Add this line for fullscreen
 g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
