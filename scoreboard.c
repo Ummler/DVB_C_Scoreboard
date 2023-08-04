@@ -198,7 +198,8 @@ int main(int argc, char *argv[]) {
 
 window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 gtk_window_set_title(GTK_WINDOW(window), "Anzeigetafel");
-gtk_window_fullscreen(GTK_WINDOW(window));  // Add this line for fullscreen
+gtk_widget_set_size_request (GTK_WIDGET(window), 1366, 768);
+//gtk_window_fullscreen(GTK_WINDOW(window));  // Add this line for fullscreen
 g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
 drawing_area = gtk_drawing_area_new();
