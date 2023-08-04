@@ -15,11 +15,13 @@
 #define NUM_LETTERS (sizeof(letters)/sizeof(letters[0]))
 #define WIDTH (CELL_SIZE * GRID_COLS)
 #define HEIGHT (CELL_SIZE * GRID_ROWS)
-#define ROW_HEIGHT 16
+#define ROW_HEIGHT 13
 #define MAX_DIR_LENGTH (GRID_COLS - 75)
 #define MAX_LINE_LENGTH 30
 #define MAX_TIME_LENGTH 40
+//37,4 auf 47,5
 
+a=zy/x
 
 
 // Fügen Sie diese Zeilen vor der main Funktion hinzu
@@ -81,9 +83,7 @@ void DrawLetter(int x, int y, wchar_t character) {
             for (int j = 0; j < letters[i].height; j++) {
                 for (int k = 0; k < letters[i].width; k++) {
                     if (letters[i].map[j][k] == 1) {
-                        grid[y*1.25 + j][x*1.25 + k] = true;  // Multipliziert die Positionen mit 1.25
-}
-                        //grid[y + j][x + k] = true;
+                        grid[y + j][x + k] = true;
                     }
                 }
             }
@@ -104,7 +104,6 @@ void DrawString(int x, int y, const wchar_t* string) {
         spaced_string[2*i + 1] = L' ';     // Insert space
     }
     spaced_string[2 * len] = L'\0';  // Null-terminate the new string
-
     
     len = wcslen(spaced_string);  // Update length for the new string
 
@@ -127,12 +126,10 @@ void DrawString(int x, int y, const wchar_t* string) {
         DrawLetter(x, y, spaced_string[i]);
 
         // update x to the next position; add letter width and space between letters
-        x += letterInfo.width * 1.25 + 1.25;  // Multipliziert die Breite mit 1.25
-        //x += letterInfo.width + 1;
+        x += letterInfo.width + 1;
     }
 
     free(spaced_string);  // Free the allocated memory
-     
 }
 
 
@@ -204,7 +201,7 @@ int main(int argc, char *argv[]) {
 
 window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 gtk_window_set_title(GTK_WINDOW(window), "Anzeigetafel");
-gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
+
 gtk_widget_set_size_request (GTK_WIDGET(window), 1920, 1080);
 //gtk_window_fullscreen(GTK_WINDOW(window));  // Add this line for fullscreen
 g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
