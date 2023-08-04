@@ -170,7 +170,7 @@ gboolean repeat_function(gpointer user_data) {
     // Hier setzen wir das gesamte Raster auf 'false'
     memset(grid, false, sizeof grid);
 
-    const int limit = 25;
+    const int limit = 23;
     DepartureInfo departures[limit];
     struct json_object* json_data = fetchData("33000016", limit);
     parse_and_store_data(json_data, departures, limit);
@@ -198,27 +198,13 @@ int main(int argc, char *argv[]) {
 
 window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 gtk_window_set_title(GTK_WINDOW(window), "Anzeigetafel");
-gtk_widget_set_size_request (GTK_WIDGET(window), 1366, 768);
+gtk_widget_set_size_request (GTK_WIDGET(window), 1920, 1080);
 //gtk_window_fullscreen(GTK_WINDOW(window));  // Add this line for fullscreen
 g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
 drawing_area = gtk_drawing_area_new();
 gtk_container_add(GTK_CONTAINER(window), drawing_area);
 g_signal_connect(G_OBJECT(drawing_area), "draw", G_CALLBACK(on_draw_event), NULL);
-
-
-
-
-
-/*
-    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(window), "Anzeigetafel");
-    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
-
-    drawing_area = gtk_drawing_area_new();
-    gtk_container_add(GTK_CONTAINER(window), drawing_area);
-    g_signal_connect(G_OBJECT(drawing_area), "draw", G_CALLBACK(on_draw_event), NULL);
-*/
 
     GtkCssProvider *provider = gtk_css_provider_new();
     GdkDisplay *display = gdk_display_get_default();
